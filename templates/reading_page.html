@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ story[0] }}</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static',
+          filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="card">
+
+        <h1>{{ story[0] }}</h1>
+
+        {% if story[2] %}
+        <img class="cover-img"
+             src="{{ url_for('static',
+             filename='images/' + story[2]) }}">
+        {% endif %}
+
+        <hr>
+
+        <div class="story-text">
+
+            {{ story[1] }}
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

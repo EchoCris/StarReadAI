@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>AI故事生成</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+<div class="page">
+
+    <h1>🌟 AI故事生成</h1>
+    <p class="subtitle">选择主题后，系统会为孩子生成一篇适合阅读的小故事</p>
+
+    <div class="card">
+        <form method="POST">
+    <label>故事主题：</label>
+    <select name="theme" class="input">
+        <option value="动物" {% if selected_theme == "动物" %}selected{% endif %}>动物</option>
+        <option value="冒险" {% if selected_theme == "冒险" %}selected{% endif %}>冒险</option>
+        <option value="科幻" {% if selected_theme == "科幻" %}selected{% endif %}>科幻</option>
+        <option value="友情" {% if selected_theme == "友情" %}selected{% endif %}>友情</option>
+        <option value="成长" {% if selected_theme == "成长" %}selected{% endif %}>成长</option>
+            </select>
+
+            <label>适用年龄：</label>
+            <select name="age_group" class="input">
+                <option value="3-5岁" {% if selected_age == "3-5岁" %}selected{% endif %}>3-5岁</option>
+                <option value="6-8岁" {% if selected_age == "6-8岁" %}selected{% endif %}>6-8岁</option>
+                <option value="9-12岁" {% if selected_age == "9-12岁" %}selected{% endif %}>9-12岁</option>
+            </select>
+
+            <label>关键词：</label>
+            <input type="text" name="keywords" class="input" placeholder="如：小兔子、森林、宇宙">
+
+            <button class="btn" type="submit">生成故事</button>
+        </form>
+    </div>
+
+    {% if story %}
+    <div class="card story-result">
+        <h2>{{ story[0] }}</h2>
+        <p class="tag">主题：{{ story[2] }} ｜ 年龄段：{{ story[3] }}</p>
+        <hr>
+        <p class="story-text">{{ story[1] }}</p>
+    </div>
+    {% endif %}
+
+</div>
+</body>
+</html>

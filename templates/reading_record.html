@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>阅读记录</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+<div class="page">
+    <h1>📝 阅读记录</h1>
+
+    <div class="card">
+        <p>累计阅读：<strong>{{ total_count }}</strong> 篇</p>
+        <p>累计阅读时间：<strong>{{ total_minutes }}</strong> 分钟</p>
+    </div>
+
+    {% for record in records %}
+    <div class="card">
+        <h3>{{ record[0] }}</h3>
+        <p>阅读时间：{{ record[1] }}</p>
+        <p>阅读时长：{{ record[2] }} 分钟</p>
+    </div>
+    {% endfor %}
+</div>
+</body>
+</html>
