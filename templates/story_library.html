@@ -11,9 +11,96 @@
 
 <body>
 
+    <!-- 左侧导航栏 -->
+    <div class="sidebar">
+
+        <h2>StarRead</h2>
+
+        <ul>
+
+            <li>
+                <a href="/">
+                    🏠 首页
+                </a>
+            </li>
+
+            <li>
+                <a href="/generate_story">
+                    📖 故事搜索
+                </a>
+            </li>
+
+            <li>
+                <a href="/story_library">
+                    📚 故事书库
+                </a>
+            </li>
+
+            <li>
+                <a href="/favorite_list">
+                    ❤️ 我的收藏
+                </a>
+            </li>
+
+            <li>
+                <a href="/reading_record">
+                    📝 阅读记录
+                </a>
+            </li>
+
+            <li>
+                <a href="/parent_center">
+                    👨‍👩‍👧 家长中心
+                </a>
+            </li>
+
+        </ul>
+
+    </div>
+
 <div class="content">
 
     <h1>故事书库</h1>
+    <div class="card">
+        <h2>添加自定义故事</h2>
+
+        <form method="POST">
+            <label>故事标题：</label>
+            <input type="text" name="title" class="input" required>
+
+            <label>故事主题：</label>
+            <select name="theme" class="input">
+                <option value="动物">动物</option>
+                <option value="冒险">冒险</option>
+                <option value="科幻">科幻</option>
+                <option value="友情">友情</option>
+                <option value="成长">成长</option>
+            </select>
+
+            <label>适用年龄：</label>
+            <select name="age_group" class="input">
+                <option value="3-5岁">3-5岁</option>
+                <option value="6-8岁">6-8岁</option>
+                <option value="9-12岁">9-12岁</option>
+            </select>
+
+            <label>关键词：</label>
+            <input type="text"
+                   name="keywords"
+                   class="input"
+                   placeholder="例如：宇宙,飞船,月球">
+
+            <label>故事内容：</label>
+            <textarea
+                name="content"
+                class="input"
+                rows="8"
+                required></textarea>
+
+            <br><br>
+            <button class="btn" type="submit">添加故事</button>
+        </form>
+    </div>
 
     {% for story in stories %}
 

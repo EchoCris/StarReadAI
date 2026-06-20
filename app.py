@@ -1,11 +1,34 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session
 import pymysql
 from config import *
 
 app = Flask(__name__)
+app.secret_key = "C"
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        if username.strip() != "" and password.strip() != "":
+            session["user_id"] = 1
+            session["username"] = username
+            return redirect("/")
+
+    return render_template("login.html", error=None)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 @app.route("/")
 def home():
+    if "user_id" not in session:
+        return redirect("/login")
+
     conn = pymysql.connect(
         host=DB_HOST,
         port=DB_PORT,
@@ -45,7 +68,7 @@ def home():
         hot_stories=hot_stories
     )
 
-@app.route("/story_library")
+@app.route("/story_library", methods=["GET", "POST"])
 def story_library():
 
     conn = pymysql.connect(
@@ -59,9 +82,33 @@ def story_library():
 
     cursor = conn.cursor()
 
+    if request.method == "POST":
+        title = request.form["title"]
+        theme = request.form["theme"]
+        age_group = request.form["age_group"]
+        keywords = request.form["keywords"]
+        content = request.form["content"]
+
+        cursor.execute("""
+            INSERT INTO story
+            (title, theme, age_group, keywords, content, cover_image, read_count, favorite_count, created_at)
+            VALUES
+            (%s, %s, %s, %s, %s, %s, 0, 0, NOW())
+        """, (
+            title,
+            theme,
+            age_group,
+            keywords,
+            content,
+            "letter.jpg"
+        ))
+
+        conn.commit()
+
     cursor.execute("""
         SELECT story_id, title, theme, age_group, read_count
         FROM story
+        ORDER BY story_id DESC
     """)
 
     stories = cursor.fetchall()
@@ -77,13 +124,15 @@ def story_library():
 def generate_story():
 
     story = None
+    recommendations = []
     selected_theme = "动物"
     selected_age = "3-5岁"
+    keyword = ""
 
     if request.method == "POST":
         selected_theme = request.form["theme"]
         selected_age = request.form["age_group"]
-        keywords = request.form["keywords"]
+        keyword = request.form.get("keyword", "").strip()
 
         conn = pymysql.connect(
             host=DB_HOST,
@@ -96,34 +145,57 @@ def generate_story():
 
         cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT title,content,theme,age_group
-            FROM story
-            WHERE theme=%s AND age_group=%s
-            ORDER BY RAND()
-            LIMIT 1
-        """, (selected_theme, selected_age))
+        if keyword:
+            cursor.execute("""
+                SELECT story_id, title, content, theme, age_group
+                FROM story
+                WHERE theme=%s
+                  AND age_group=%s
+                  AND keywords LIKE %s
+                ORDER BY RAND()
+                LIMIT 1
+            """, (selected_theme, selected_age, "%" + keyword + "%"))
+        else:
+            cursor.execute("""
+                SELECT story_id, title, content, theme, age_group
+                FROM story
+                WHERE theme=%s
+                  AND age_group=%s
+                ORDER BY RAND()
+                LIMIT 1
+            """, (selected_theme, selected_age))
 
         story = cursor.fetchone()
+
         if story:
             cursor.execute("""
                 INSERT INTO story_generate_record
                 (user_id, theme, age_group, keywords, story_id, generate_time)
-                SELECT 1, %s, %s, %s, story_id, NOW()
-                FROM story
-                WHERE title = %s 
-                LIMIT 1
-            """, (selected_theme, selected_age, keywords, story[0]))
-
+                VALUES (1, %s, %s, %s, %s, NOW())
+            """, (selected_theme, selected_age, keyword, story[0]))
             conn.commit()
+
+        else:
+            cursor.execute("""
+                SELECT story_id, title, content, theme, age_group
+                FROM story
+                WHERE theme=%s
+                   OR age_group=%s
+                ORDER BY RAND()
+                LIMIT 3
+            """, (selected_theme, selected_age))
+
+            recommendations = cursor.fetchall()
 
         conn.close()
 
     return render_template(
         "generate_story.html",
         story=story,
+        recommendations=recommendations,
         selected_theme=selected_theme,
-        selected_age=selected_age
+        selected_age=selected_age,
+        keyword=keyword
     )
 
 @app.route("/reading_record")

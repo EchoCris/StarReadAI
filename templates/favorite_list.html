@@ -11,30 +11,79 @@
 
 <body>
 
-<div class="content">
+    <!-- 左侧导航栏 -->
+    <div class="sidebar">
 
-    <h1>❤️ 我的收藏</h1>
+        <h2>StarRead</h2>
 
-    {% for story in stories %}
+        <ul>
 
-    <a href="/story/{{ story[0] }}"
-       style="text-decoration:none; color:black;">
+            <li>
+                <a href="/">
+                    🏠 首页
+                </a>
+            </li>
 
-        <div class="card">
+            <li>
+                <a href="/generate_story">
+                    📖 故事搜索
+                </a>
+            </li>
 
-            <h3>{{ story[1] }}</h3>
+            <li>
+                <a href="/story_library">
+                    📚 故事书库
+                </a>
+            </li>
 
-            <p>主题：{{ story[2] }}</p>
+            <li>
+                <a href="/favorite_list">
+                    ❤️ 我的收藏
+                </a>
+            </li>
 
-            <p>年龄段：{{ story[3] }}</p>
+            <li>
+                <a href="/reading_record">
+                    📝 阅读记录
+                </a>
+            </li>
 
-        </div>
+            <li>
+                <a href="/parent_center">
+                    👨‍👩‍👧 家长中心
+                </a>
+            </li>
 
-    </a>
+        </ul>
 
-    {% endfor %}
+    </div>
 
-</div>
+    <!-- 右侧内容区域 -->
+    <div class="content">
+
+        <h1>❤️ 我的收藏</h1>
+
+        {% for story in stories %}
+
+        <a href="/story/{{ story[0] }}"
+           style="text-decoration:none;color:black;">
+
+            <div class="card">
+
+                <h3>{{ story[1] }}</h3>
+
+                <p>主题：{{ story[2] }}</p>
+
+                <p>年龄段：{{ story[3] }}</p>
+
+            </div>
+
+        </a>
+
+        {% endfor %}
+
+    </div>
 
 </body>
+
 </html>
