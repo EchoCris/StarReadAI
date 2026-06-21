@@ -1,29 +1,21 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>登录 - StarReadAI</title>
+    <title>Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+<body>
 
-<body class="login-body">
+<div class="container">
+    <h1>Login</h1>
 
-<div class="login-card">
-    <h1>StarReadAI</h1>
-    <h2>用户登录</h2>
-
-    <form method="POST">
-        <input type="text" name="username" placeholder="用户名" required>
-        <input type="password" name="password" placeholder="密码" required>
-
-        <button type="submit" class="btn">登录</button>
+    <form method="post">
+        <input type="text" name="username" placeholder="Username">
+        <input type="password" name="password" placeholder="Password">
+        <button type="submit">Login</button>
     </form>
 
-    {% if error %}
-    <p class="error-text">{{ error }}</p>
-    {% endif %}
-
-    <p class="login-tip">测试账号：admin / 123456</p>
+    <a href="{{ url_for('register') }}">Register</a>
 </div>
 
 </body>

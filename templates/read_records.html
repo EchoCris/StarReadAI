@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Read Records</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1>Reading Records</h1>
+
+    {% for record in records %}
+        <div>
+            <p>Story: {{ record.title }}</p>
+            <p>Read Time: {{ record.read_time }}</p>
+            <p>Spend Time: {{ record.spend_time }} minutes</p>
+        </div>
+        <hr>
+    {% endfor %}
+
+</div>
+
+</body>
+</html>

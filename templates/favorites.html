@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Favorites</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1>My Favorites</h1>
+
+    {% for story in favorites %}
+        <div>
+            <h3>{{ story.title }}</h3>
+            <a href="{{ url_for('story_detail', story_id=story.id) }}">
+                View
+            </a>
+        </div>
+        <hr>
+    {% endfor %}
+
+</div>
+
+</body>
+</html>
