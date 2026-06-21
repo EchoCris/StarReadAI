@@ -1,33 +1,118 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>Generate Story</title>
+    <meta charset="UTF-8">
+    <title>AI故事生成</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
 
-<div class="container">
-    <h1>Generate Story</h1>
+    <!-- 左侧导航栏 -->
+    <div class="sidebar">
 
-    <form method="post">
+        <h2>StarRead</h2>
 
-        <label>Theme</label>
-        <select name="theme">
-            <option value="Adventure">Adventure</option>
-            <option value="Animals">Animals</option>
-            <option value="Fantasy">Fantasy</option>
-        </select>
+        <ul>
 
-        <label>Suitable Age</label>
-        <input type="number" name="age">
+            <li>
+                <a href="/">
+                    🏠 首页
+                </a>
+            </li>
 
-        <label>Keyword</label>
-        <input type="text" name="keyword">
+            <li>
+                <a href="/generate_story">
+                    📖 故事搜索
+                </a>
+            </li>
 
-        <button type="submit">Generate</button>
+            <li>
+                <a href="/story_library">
+                    📚 故事书库
+                </a>
+            </li>
 
-    </form>
+            <li>
+                <a href="/favorite_list">
+                    ❤️ 我的收藏
+                </a>
+            </li>
+
+            <li>
+                <a href="/reading_record">
+                    📝 阅读记录
+                </a>
+            </li>
+
+            <li>
+                <a href="/parent_center">
+                    👨‍👩‍👧 家长中心
+                </a>
+            </li>
+
+        </ul>
+
+    </div>
+
+<div class="page">
+
+    <h1>🌟 故事搜索</h1>
+    <p class="subtitle">选择主题后，系统会为孩子寻找一篇适合阅读的小故事</p>
+
+    <div class="card">
+        <form method="POST">
+    <label>故事主题：</label>
+    <select name="theme" class="input">
+        <option value="动物" {% if selected_theme == "动物" %}selected{% endif %}>动物</option>
+        <option value="冒险" {% if selected_theme == "冒险" %}selected{% endif %}>冒险</option>
+        <option value="科幻" {% if selected_theme == "科幻" %}selected{% endif %}>科幻</option>
+        <option value="友情" {% if selected_theme == "友情" %}selected{% endif %}>友情</option>
+        <option value="成长" {% if selected_theme == "成长" %}selected{% endif %}>成长</option>
+            </select>
+
+            <label>适用年龄：</label>
+            <select name="age_group" class="input">
+                <option value="3-5岁" {% if selected_age == "3-5岁" %}selected{% endif %}>3-5岁</option>
+                <option value="6-8岁" {% if selected_age == "6-8岁" %}selected{% endif %}>6-8岁</option>
+                <option value="9-12岁" {% if selected_age == "9-12岁" %}selected{% endif %}>9-12岁</option>
+            </select>
+
+            <label>关键词：</label>
+            <input type="text" name="keyword" class="input" placeholder="如：小兔子、森林、宇宙" value="{{ keyword }}">
+
+            <button class="btn" type="submit">搜索故事</button>
+        </form>
+    </div>
+
+    {% if story %}
+    <div class="card story-result">
+        <h2>{{ story[1] }}</h2>
+        <p class="tag">主题：{{ story[3] }} ｜ 年龄段：{{ story[4] }}</p>
+        <hr>
+        <p class="story-text">{{ story[2] }}</p>
+    </div>
+    {% endif %}
+
+    {% if recommendations %}
+    <div class="card story-result">
+        <h2>😊 没有找到完全匹配的故事</h2>
+        <p class="subtitle">不过你可以先看看下面这些推荐故事：</p>
+
+        {% for item in recommendations %}
+        <div class="recommend-card">
+            <h3>{{ item[1] }}</h3>
+            <p class="tag">主题：{{ item[3] }} ｜ 年龄段：{{ item[4] }}</p>
+            <p class="story-text">
+                {{ item[2][:120] }}...
+            </p>
+            <a class="btn" href="/story/{{ item[0] }}">查看完整故事</a>
+        </div>
+        <hr>
+        {% endfor %}
+    </div>
+    {% endif %}
+
 </div>
-
 </body>
 </html>

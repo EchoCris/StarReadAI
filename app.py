@@ -1,314 +1,483 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 import pymysql
 from config import *
 
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
-
-
-def get_db():
-    return pymysql.connect(
-        host=DB_HOST,
-        port=DB_PORT,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_NAME,
-        charset="utf8mb4",
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
-
-@app.route("/")
-def index():
-    return redirect(url_for("login"))
-
+app.secret_key = "C"
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form["username"]
+        password = request.form["password"]
 
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute(
-            "SELECT * FROM `user` WHERE username=%s AND password=%s",
-            (username, password)
-        )
-        user = cursor.fetchone()
-        db.close()
+        if username.strip() != "" and password.strip() != "":
+            session["user_id"] = 1
+            session["username"] = username
+            return redirect("/")
 
-        if user:
-            session["user_id"] = user["id"]
-            session["username"] = user["username"]
-            session["role"] = user["role"]
-
-            if user["role"] == "parent":
-                return redirect(url_for("parent_home"))
-            else:
-                return redirect(url_for("child_home"))
-
-        return "用户名或密码错误"
-
-    return render_template("login.html")
-
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        nickname = request.form.get("nickname")
-        age = request.form.get("age")
-        role = request.form.get("role")
-
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute(
-            """
-            INSERT INTO `user` (username, password, nickname, age, role)
-            VALUES (%s, %s, %s, %s, %s)
-            """,
-            (username, password, nickname, age, role)
-        )
-        db.commit()
-        db.close()
-
-        return redirect(url_for("login"))
-
-    return render_template("register.html")
-
-
-@app.route("/child_home")
-def child_home():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    return render_template("child_home.html")
-
-
-@app.route("/parent_home")
-def parent_home():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    return render_template("parent_home.html")
-
-
-@app.route("/generate_story", methods=["GET", "POST"])
-def generate_story():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    if request.method == "POST":
-        theme = request.form.get("theme")
-        age = request.form.get("age")
-        keyword = request.form.get("keyword")
-
-        title = f"{keyword}的奇妙故事"
-        content = f"从前，有一个喜欢{keyword}的小朋友。他进入了一个关于{theme}的世界，在那里学会了勇敢、友爱和坚持。最后，他带着快乐和知识回到了家。"
-
-        cover_url = "/static/uploads/covers/default_cover.jpg"
-
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute(
-            """
-            INSERT INTO story (title, content, theme, suitable_age, cover_url, user_id)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            """,
-            (title, content, theme, age, cover_url, session["user_id"])
-        )
-        db.commit()
-        db.close()
-
-        return redirect(url_for("story_list"))
-
-    return render_template("generate_story.html")
-
-
-@app.route("/stories")
-def story_list():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM story ORDER BY create_time DESC")
-    stories = cursor.fetchall()
-    db.close()
-
-    return render_template("story_list.html", stories=stories)
-
-
-@app.route("/story/<int:story_id>")
-def story_detail(story_id):
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute("SELECT * FROM story WHERE id=%s", (story_id,))
-    story = cursor.fetchone()
-
-    cursor.execute(
-        """
-        INSERT INTO read_record (user_id, story_id, spend_time)
-        VALUES (%s, %s, %s)
-        """,
-        (session["user_id"], story_id, 5)
-    )
-
-    db.commit()
-    db.close()
-
-    return render_template("story_detail.html", story=story)
-
-
-@app.route("/add_favorite/<int:story_id>")
-def add_favorite(story_id):
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute(
-        """
-        SELECT * FROM collect
-        WHERE user_id=%s AND story_id=%s
-        """,
-        (session["user_id"], story_id)
-    )
-    existing = cursor.fetchone()
-
-    if not existing:
-        cursor.execute(
-            """
-            INSERT INTO collect (user_id, story_id)
-            VALUES (%s, %s)
-            """,
-            (session["user_id"], story_id)
-        )
-        db.commit()
-
-    db.close()
-    return redirect(url_for("favorites"))
-
-
-@app.route("/favorites")
-def favorites():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute(
-        """
-        SELECT s.*
-        FROM collect c
-        JOIN story s ON c.story_id = s.id
-        WHERE c.user_id=%s
-        ORDER BY c.collect_time DESC
-        """,
-        (session["user_id"],)
-    )
-    favorites = cursor.fetchall()
-    db.close()
-
-    return render_template("favorites.html", favorites=favorites)
-
-
-@app.route("/records")
-def read_records():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute(
-        """
-        SELECT r.*, s.title
-        FROM read_record r
-        JOIN story s ON r.story_id = s.id
-        WHERE r.user_id=%s
-        ORDER BY r.read_time DESC
-        """,
-        (session["user_id"],)
-    )
-    records = cursor.fetchall()
-    db.close()
-
-    return render_template("read_records.html", records=records)
-
-
-@app.route("/view_child_records")
-def view_child_records():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute(
-        """
-        SELECT r.*, s.title, u.nickname AS child_name
-        FROM parent_control pc
-        JOIN `user` u ON pc.child_id = u.id
-        JOIN read_record r ON pc.child_id = r.user_id
-        JOIN story s ON r.story_id = s.id
-        WHERE pc.parent_id=%s
-        ORDER BY r.read_time DESC
-        """,
-        (session["user_id"],)
-    )
-    records = cursor.fetchall()
-    db.close()
-
-    return render_template("read_records.html", records=records)
-
-
-@app.route("/set_daily_limit", methods=["GET", "POST"])
-def set_daily_limit():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    if request.method == "POST":
-        child_id = request.form.get("child_id")
-        daily_time = request.form.get("daily_time")
-
-        db = get_db()
-        cursor = db.cursor()
-
-        cursor.execute(
-            """
-            INSERT INTO parent_control (parent_id, child_id, daily_time)
-            VALUES (%s, %s, %s)
-            """,
-            (session["user_id"], child_id, daily_time)
-        )
-
-        db.commit()
-        db.close()
-
-        return redirect(url_for("parent_home"))
-
-    return """
-    <h1>Set Daily Time Limit</h1>
-    <form method="post">
-        <input name="child_id" placeholder="Child ID">
-        <input name="daily_time" placeholder="Daily Time">
-        <button type="submit">Submit</button>
-    </form>
-    """
+    return render_template("login.html", error=None)
 
 
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect("/login")
 
+@app.route("/")
+def home():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    # 今日推荐：取3个故事做轮播
+    cursor.execute("""
+        SELECT story_id, title, theme, cover_image
+        FROM story
+        WHERE cover_image IS NOT NULL
+        ORDER BY RAND()
+        LIMIT 3
+    """)
+    recommended = cursor.fetchall()
+
+    # 热门故事：按阅读次数排序，取8个
+    cursor.execute("""
+        SELECT story_id, title, theme, age_group, cover_image, read_count
+        FROM story
+        WHERE cover_image IS NOT NULL
+        ORDER BY read_count DESC
+        LIMIT 8
+    """)
+    hot_stories = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "index.html",
+        recommended=recommended,
+        hot_stories=hot_stories
+    )
+
+@app.route("/story_library", methods=["GET", "POST"])
+def story_library():
+
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    if request.method == "POST":
+        title = request.form["title"]
+        theme = request.form["theme"]
+        age_group = request.form["age_group"]
+        keywords = request.form["keywords"]
+        content = request.form["content"]
+
+        cursor.execute("""
+            INSERT INTO story
+            (title, theme, age_group, keywords, content, cover_image, read_count, favorite_count, created_at)
+            VALUES
+            (%s, %s, %s, %s, %s, %s, 0, 0, NOW())
+        """, (
+            title,
+            theme,
+            age_group,
+            keywords,
+            content,
+            "letter.jpg"
+        ))
+
+        conn.commit()
+
+    cursor.execute("""
+        SELECT story_id, title, theme, age_group, read_count
+        FROM story
+        ORDER BY story_id DESC
+    """)
+
+    stories = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "story_library.html",
+        stories=stories
+    )
+
+@app.route("/generate_story", methods=["GET", "POST"])
+def generate_story():
+
+    story = None
+    recommendations = []
+    selected_theme = "动物"
+    selected_age = "3-5岁"
+    keyword = ""
+
+    if request.method == "POST":
+        selected_theme = request.form["theme"]
+        selected_age = request.form["age_group"]
+        keyword = request.form.get("keyword", "").strip()
+
+        conn = pymysql.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            charset="utf8mb4"
+        )
+
+        cursor = conn.cursor()
+
+        if keyword:
+            cursor.execute("""
+                SELECT story_id, title, content, theme, age_group
+                FROM story
+                WHERE theme=%s
+                  AND age_group=%s
+                  AND keywords LIKE %s
+                ORDER BY RAND()
+                LIMIT 1
+            """, (selected_theme, selected_age, "%" + keyword + "%"))
+        else:
+            cursor.execute("""
+                SELECT story_id, title, content, theme, age_group
+                FROM story
+                WHERE theme=%s
+                  AND age_group=%s
+                ORDER BY RAND()
+                LIMIT 1
+            """, (selected_theme, selected_age))
+
+        story = cursor.fetchone()
+
+        if story:
+            cursor.execute("""
+                INSERT INTO story_generate_record
+                (user_id, theme, age_group, keywords, story_id, generate_time)
+                VALUES (1, %s, %s, %s, %s, NOW())
+            """, (selected_theme, selected_age, keyword, story[0]))
+            conn.commit()
+
+        else:
+            cursor.execute("""
+                SELECT story_id, title, content, theme, age_group
+                FROM story
+                WHERE theme=%s
+                   OR age_group=%s
+                ORDER BY RAND()
+                LIMIT 3
+            """, (selected_theme, selected_age))
+
+            recommendations = cursor.fetchall()
+
+        conn.close()
+
+    return render_template(
+        "generate_story.html",
+        story=story,
+        recommendations=recommendations,
+        selected_theme=selected_theme,
+        selected_age=selected_age,
+        keyword=keyword
+    )
+
+@app.route("/reading_record")
+def reading_record():
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT s.title, r.read_time, r.duration
+        FROM read_record r
+        JOIN story s ON r.story_id = s.story_id
+        WHERE r.user_id = 1
+        ORDER BY r.read_time DESC
+    """)
+
+    records = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT COUNT(*), IFNULL(SUM(duration),0)
+        FROM read_record
+        WHERE user_id = 1
+    """)
+
+    total = cursor.fetchone()
+
+    conn.close()
+
+    return render_template(
+        "reading_record.html",
+        records=records,
+        total_count=total[0],
+        total_minutes=total[1]
+    )
+
+@app.route("/parent_center")
+def parent_center():
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*), IFNULL(SUM(duration),0), COUNT(DISTINCT story_id)
+        FROM read_record
+        WHERE user_id = 1
+    """)
+    total = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT IFNULL(SUM(duration),0)
+        FROM read_record
+        WHERE user_id = 1 AND DATE(read_time) = CURDATE()
+    """)
+    today_minutes = cursor.fetchone()[0]
+
+    cursor.execute("""
+        SELECT max_minutes
+        FROM daily_limit
+        WHERE user_id = 1
+        LIMIT 1
+    """)
+    limit_result = cursor.fetchone()
+    max_minutes = limit_result[0] if limit_result else 60
+
+    conn.close()
+
+    return render_template(
+        "parent_center.html",
+        today_minutes=today_minutes,
+        total_count=total[0],
+        total_minutes=total[1],
+        story_count=total[2],
+        max_minutes=max_minutes
+    )
+
+@app.route("/story/<int:story_id>")
+def story_detail(story_id):
+
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT title, theme, age_group, content, cover_image
+        FROM story
+        WHERE story_id=%s
+    """, (story_id,))
+
+    story = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT *
+        FROM favorite
+        WHERE user_id=1 AND story_id=%s
+    """, (story_id,))
+
+    favorite = cursor.fetchone()
+
+    conn.close()
+
+    favorite_success = request.args.get("favorite")
+
+    return render_template(
+        "story_detail.html",
+        story=story,
+        story_id=story_id,
+        favorite=favorite,
+        favorite_success=favorite_success
+    )
+
+@app.route("/favorite/<int:story_id>")
+def add_favorite(story_id):
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO favorite (user_id, story_id, favorite_time)
+        VALUES (1, %s, NOW())
+    """, (story_id,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/story/" + str(story_id) + "?favorite=success")
+
+@app.route("/favorite_list")
+def favorite_list():
+
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            s.story_id,
+            s.title,
+            s.theme,
+            s.age_group,
+            s.cover_image
+        FROM favorite f
+        JOIN story s
+            ON f.story_id = s.story_id
+        WHERE f.user_id = 1
+        ORDER BY f.favorite_time DESC
+    """)
+
+    stories = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "favorite_list.html",
+        stories=stories
+    )
+
+@app.route("/unfavorite/<int:story_id>")
+def unfavorite(story_id):
+
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM favorite
+        WHERE user_id=1
+        AND story_id=%s
+    """, (story_id,))
+
+    conn.commit()
+
+    conn.close()
+
+    return redirect("/story/" + str(story_id))
+
+@app.route("/read/<int:story_id>")
+def read_story(story_id):
+
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO read_record
+        (user_id, story_id, read_time, duration)
+        VALUES
+        (1, %s, NOW(), 5)
+    """, (story_id,))
+
+    conn.commit()
+
+    cursor.execute("""
+        SELECT title,
+               content,
+               cover_image
+        FROM story
+        WHERE story_id=%s
+    """, (story_id,))
+
+    story = cursor.fetchone()
+
+    conn.close()
+
+    return render_template(
+        "reading_page.html",
+        story=story
+    )
+
+@app.route("/set_limit", methods=["POST"])
+def set_limit():
+    max_minutes = request.form["max_minutes"]
+
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4"
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE daily_limit
+        SET max_minutes=%s, updated_at=NOW()
+        WHERE user_id=1
+    """, (max_minutes,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/parent_center")
 
 if __name__ == "__main__":
     app.run(debug=True)
