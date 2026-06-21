@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>儿童AI伴读系统</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="home-page">
+
+<div class="home-container">
+
+    <div class="sidebar">
+
+        <h2>StarRead</h2>
+        <div class="user-info">
+            <p>👤 {{ session.username }}</p>
+            <a href="/logout">退出登录</a>
+        </div>
+
+        <ul>
+            <li>🏠 首页</li>
+
+            <li>
+                <a href="/generate_story">
+                    📖 故事搜索
+                </a>
+            </li>
+
+            <li>
+                <a href="/story_library">
+                    📚 故事书库
+                </a>
+            </li>
+
+            </li>
+                <a href="/favorite_list">
+                    ❤️ 我的收藏
+                </a>
+            </li>
+
+            <li>
+                <a href="/reading_record">
+                    📝 阅读记录
+                </a>
+            </li>
+
+             <li>
+                <a href="/parent_center">
+                    👨‍👩‍👧 家长中心
+                </a>
+            </li>
+
+        </ul>
+
+    </div>
+
+    <div class="content">
+
+        <h1>儿童故事伴读系统</h1>
+
+        <section class="section">
+            <h2>🌟 今日推荐</h2>
+
+            <div class="carousel-wrapper">
+
+                <div class="slide active">
+                    <a href="/story/1">
+                        <img src="{{ url_for('static', filename='images/night.jpg') }}">
+                    </a>
+                </div>
+
+                <div class="slide">
+                    <a href="/story/2">
+                        <img src="{{ url_for('static', filename='images/fish.jpg') }}">
+                    </a>
+                </div>
+
+                <div class="slide">
+                    <a href="/story/3">
+                        <img src="{{ url_for('static', filename='images/letter.jpg') }}">
+                    </a>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>🔥 热门故事</h2>
+
+            <div class="story-grid">
+                {% for story in hot_stories %}
+                <a href="/story/{{ story[0] }}" class="story-card">
+                    <img src="{{ url_for('static', filename='images/' + story[4]) }}">
+                    <h3>{{ story[1] }}</h3>
+                    <p>{{ story[2] }} · {{ story[3] }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
+<script>
+let index = 0;
+
+setInterval(() => {
+
+    const slides = document.querySelectorAll(".slide");
+
+    slides.forEach(s => s.classList.remove("active"));
+
+    index++;
+
+    if (index >= slides.length) {
+        index = 0;
+    }
+
+    slides[index].classList.add("active");
+
+}, 3000);
+</script>
+
+</body>
+</html>

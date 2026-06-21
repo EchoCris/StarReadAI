@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>家长中心</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- 左侧导航栏 -->
+    <div class="sidebar">
+
+        <h2>StarRead</h2>
+
+        <ul>
+
+            <li>
+                <a href="/">
+                    🏠 首页
+                </a>
+            </li>
+
+            <li>
+                <a href="/generate_story">
+                    📖 故事搜索
+                </a>
+            </li>
+
+            <li>
+                <a href="/story_library">
+                    📚 故事书库
+                </a>
+            </li>
+
+            <li>
+                <a href="/favorite_list">
+                    ❤️ 我的收藏
+                </a>
+            </li>
+
+            <li>
+                <a href="/reading_record">
+                    📝 阅读记录
+                </a>
+            </li>
+
+            <li>
+                <a href="/parent_center">
+                    👨‍👩‍👧 家长中心
+                </a>
+            </li>
+
+        </ul>
+
+    </div>
+
+<div class="page">
+    <h1>👨‍👩‍👧 家长中心</h1>
+
+    <div class="card">
+        <h2>孩子阅读概况</h2>
+        <p>阅读故事数：<strong>{{ story_count }}</strong> 本</p>
+        <p>今日阅读时间：<strong>{{ today_minutes }}</strong> 分钟</p>
+        <p>累计阅读次数：<strong>{{ total_count }}</strong> 次</p>
+        <p>累计阅读时间：<strong>{{ total_minutes }}</strong> 分钟</p>
+    </div>
+
+    <div class="card">
+        <h2>使用限制</h2>
+
+        <p>每日最长阅读时间：<strong>{{ max_minutes }}</strong> 分钟</p>
+
+        <div class="limit-row">
+            <form method="POST" action="/set_limit" class="limit-form">
+                <input class="input" type="number" name="max_minutes" placeholder="自定义分钟数" min="1" required>
+                <button class="btn custom-btn" type="submit">保存自定义</button>
+            </form>
+
+            <form method="POST" action="/set_limit">
+                <button class="btn" type="submit" name="max_minutes" value="30">30分钟</button>
+                <button class="btn" type="submit" name="max_minutes" value="60">60分钟</button>
+                <button class="btn" type="submit" name="max_minutes" value="90">90分钟</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

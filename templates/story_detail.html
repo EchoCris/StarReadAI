@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>故事详情</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- 左侧导航栏 -->
+    <div class="sidebar">
+
+        <h2>StarRead</h2>
+
+        <ul>
+
+            <li>
+                <a href="/">
+                    🏠 首页
+                </a>
+            </li>
+
+            <li>
+                <a href="/generate_story">
+                    📖 故事搜索
+                </a>
+            </li>
+
+            <li>
+                <a href="/story_library">
+                    📚 故事书库
+                </a>
+            </li>
+
+            <li>
+                <a href="/favorite_list">
+                    ❤️ 我的收藏
+                </a>
+            </li>
+
+            <li>
+                <a href="/reading_record">
+                    📝 阅读记录
+                </a>
+            </li>
+
+            <li>
+                <a href="/parent_center">
+                    👨‍👩‍👧 家长中心
+                </a>
+            </li>
+
+        </ul>
+
+    </div>
+
+<div class="page">
+    <div class="card">
+        <h1>{{ story[0] }}</h1>
+        {% if story[4] %}
+        <img class="cover-img"
+             src="{{ url_for('static',
+             filename='images/' + story[4]) }}">
+        {% endif %}
+
+        <p>主题：{{ story[1] }}</p>
+        <p>年龄段：{{ story[2] }}</p>
+
+        <hr>
+
+        <p class="story-text">
+            {{ story[3] }}
+        </p>
+
+        {% if favorite %}
+            <a class="btn" href="/unfavorite/{{ story_id }}">💔 取消收藏</a>
+        {% else %}
+            <a class="btn" href="/favorite/{{ story_id }}">❤️ 收藏</a>
+        {% endif %}
+
+        <a class="btn" href="/read/{{ story_id }}">
+            📖 开始阅读
+        </a>
+    </div>
+</div>
+{% if favorite_success %}
+<div class="toast">
+    ❤️ 收藏成功！
+</div>
+{% endif %}
+</body>
+</html>
